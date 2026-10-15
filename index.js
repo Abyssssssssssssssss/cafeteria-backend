@@ -1,27 +1,33 @@
+require('dotenv').config();
 const express = require('express');
 const mysql = require('mysql2');
 const cors = require('cors');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
-app.use(cors()); // Habilitar CORS
+app.use(cors());
 
-// Conexión a MySQL
-const conexion = mysql.createConnection({
-  host: '127.0.0.1',
-  user: 'root',
-  password: '',
-  database: 'cafeteria'
+// Conexión a MySQL adaptada para Aiven y Render
+const conexion = mysql.createPool({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  port: Number(process.env.DB_PORT) || 3306,
+  ssl: { rejectUnauthorized: false },
+  waitForConnections: true,
+  connectionLimit: 10
 });
 
-conexion.connect(err => {
+conexion.getConnection((err, conn) => {
   if (err) {
     console.error('Error de conexión a la BD: ', err);
     return;
   }
-  console.log('Conectado exitosamente a MySQL');
+  console.log('Conectado exitosamente a MySQL en Aiven');
+  conn.release();
 });
 
 // ==========================================
@@ -161,5 +167,5 @@ app.delete('/ventas/:id', (req, res) => {
 
 // Iniciar servidor
 app.listen(PORT, () => {
-  console.log(`Servidor corriendo en http://localhost:${PORT}`);
+  console.log(`Servidor corriendo en el puerto ${PORT}`);
 });
